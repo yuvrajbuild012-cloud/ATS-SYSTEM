@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Login</title>
+<style>
+body {
+  background: #0d0d0d;
+  color: #fff;
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+  height: 100vh; 
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
+.card {
+  padding: 30px; 
+  border: 2px solid #0ff; 
+  border-radius: 10px;
+  box-shadow: 0 0 20px #0ff; 
+  width: 320px;
+  text-align: center;
+}
+.card h2 { 
+  color: #0ff; 
+  margin-bottom: 15px;
+  text-shadow: 0 0 5px #0ff;
+}
+input, button {
+  width: 100%; 
+  padding: 10px; 
+  margin: 8px 0;
+  border-radius: 5px; 
+  border: none; 
+  font-size: 14px;
+}
+input { 
+  background: #1a1a1a; 
+  color: #0ff; 
+  outline: none;
+  text-align: center;
+}
+button {
+  background: #0ff; 
+  color: #000; 
+  font-weight: bold; 
+  cursor: pointer;
+  transition: 0.3s;
+}
+button:hover {
+  box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+}
+.social {
+  background: transparent; 
+  border: 1px solid #0ff;
+  color: #0ff; 
+  cursor: pointer;
+}
+#googleBtn { border-color: #DB4437; color: #DB4437; }
+#facebookBtn { border-color: #4267B2; color: #4267B2; }
+.social:hover { box-shadow: 0 0 10px currentColor, 0 0 20px currentColor; }
+.password-container { position: relative; width: 100%; }
+.password-container input { position: relative; width: 100%; }
+#togglePassword {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #0ff;
+  font-size: 18px;
+}
+
+/* Neon Modal */
+#modalMessage {
+  display: none;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #0d0d0d;
+  border: 2px solid #0ff;
+  color: #0ff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 20px #0ff, 0 0 40px #0ff inset;
+  z-index: 1000;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  opacity: 0;
+  animation: none;
+}
+
+/* Fade-in/out animation */
+@keyframes neonFade {
+  0% { opacity: 0; text-shadow: 0 0 5px #0ff; }
+  20% { opacity: 1; text-shadow: 0 0 10px #0ff, 0 0 20px #0ff; }
+  80% { opacity: 1; text-shadow: 0 0 10px #0ff, 0 0 20px #0ff; }
+  100% { opacity: 0; text-shadow: 0 0 5px #0ff; }
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>Login</h2>
+  <input type="email" id="email" placeholder="Email">
+  <div class="password-container">
+    <input type="password" id="password" placeholder="Password">
+    <span id="togglePassword">&#128065;</span>
+  </div>
+  <a href="#" id="forgotPassword" style="display:block;margin:10px 0;color:#0ff;text-decoration:underline;">Forgot Password?</a>
+  <button id="loginBtn">Login</button>
+  <a href="register.html" style="color:#0ff;text-decoration:underline;">Don't have an account? Register</a>
+  <button class="social" id="googleBtn">Google</button>
+  <button class="social" id="facebookBtn">Facebook</button>
+</div>
+
+<!-- Neon Modal -->
+<div id="modalMessage"><p id="modalText"></p></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { 
+  getAuth, signInWithEmailAndPassword, sendPasswordResetEmail, 
+  GoogleAuthProvider, FacebookAuthProvider, signInWithPopup 
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDijnmcqv4-58_tR9uA7cDE0q3_qJXugOo",
+  authDomain: "skilllink-cg91.firebaseapp.com",
+  projectId: "skilllink-cg91",
+  storageBucket: "skilllink-cg91.firebasestorage.app",
+  messagingSenderId: "558039272903",
+  appId: "1:558039272903:web:db96385ee2eee5c1ec1de2",
+  measurementId: "G-H49CXYJ1LK"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const googleBtn = document.getElementById('googleBtn');
+const facebookBtn = document.getElementById('facebookBtn');
+const togglePassword = document.getElementById('togglePassword');
+const forgotPassword = document.getElementById('forgotPassword');
+const modal = document.getElementById("modalMessage");
+const modalText = document.getElementById("modalText");
+
+// Neon modal message function
+function showModalMessage(message, duration=2000) {
+  modalText.textContent = message;
+  modal.style.display = "block";
+  modal.style.animation = `neonFade ${duration/1000}s ease forwards`;
+  setTimeout(() => { modal.style.display = "none"; }, duration);
+}
+
+// Forgot Password
+forgotPassword.addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = emailInput.value.trim();
+  if (!email) { showModalMessage('Please enter your email to reset password.'); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showModalMessage('Password reset email sent! Check your inbox.');
+  } catch (error) { showModalMessage('Error: ' + error.message); }
+});
+
+// Password toggle
+togglePassword.addEventListener('click', () => {
+  const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+  passwordInput.setAttribute('type', type);
+});
+
+// Email login
+loginBtn.addEventListener('click', async () => {
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if (!email || !password) return showModalMessage('Fill all fields!');
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    await setDoc(doc(db, "users", user.uid), { email: email, timestamp: serverTimestamp() });
+    showModalMessage('Login successful: ' + email);
+    setTimeout(() => {window.location.href = "http://localhost:8501"; }, 2000);
+  } catch (error) { showModalMessage('Incorrect email or password!'); }
+});
+
+// Google login
+googleBtn.addEventListener('click', async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    await setDoc(doc(db, "users", user.uid), { name: user.displayName, email: user.email, timestamp: serverTimestamp() });
+    showModalMessage('Google login success: ' + user.displayName);
+    setTimeout(() => { window.location.href = "http://localhost:8501"; }, 2000);
+  } catch (error) { showModalMessage(error.message); }
+});
+
+// Facebook login
+facebookBtn.addEventListener('click', async () => {
+  const provider = new FacebookAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    await setDoc(doc(db, "users", user.uid), { name: user.displayName, email: user.email, timestamp: serverTimestamp() });
+    showModalMessage('Facebook login success: ' + user.displayName);
+    setTimeout(() => {window.location.href = "http://localhost:8501"; }, 2000);
+  } catch (error) { showModalMessage(error.message); }
+});
+</script>
+</body>
+</html>
