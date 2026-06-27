@@ -189,7 +189,7 @@ loginBtn.addEventListener('click', async () => {
     const user = userCredential.user;
     await setDoc(doc(db, "users", user.uid), { email: email, timestamp: serverTimestamp() });
     showModalMessage('Login successful: ' + email);
-    setTimeout(() => {window.location.href = "http://localhost:8501"; }, 2000);
+    setTimeout(() => {window.location.href = "https://atscheck-pro.streamlit.app";}, 2000);
   } catch (error) { showModalMessage('Incorrect email or password!'); }
 });
 
@@ -201,7 +201,7 @@ googleBtn.addEventListener('click', async () => {
     const user = result.user;
     await setDoc(doc(db, "users", user.uid), { name: user.displayName, email: user.email, timestamp: serverTimestamp() });
     showModalMessage('Google login success: ' + user.displayName);
-    setTimeout(() => { window.location.href = "http://localhost:8501"; }, 2000);
+    setTimeout(() => { window.location.href = "https://atscheck-pro.streamlit.app"; }, 2000);
   } catch (error) { showModalMessage(error.message); }
 });
 
@@ -213,7 +213,7 @@ facebookBtn.addEventListener('click', async () => {
     const user = result.user;
     await setDoc(doc(db, "users", user.uid), { name: user.displayName, email: user.email, timestamp: serverTimestamp() });
     showModalMessage('Facebook login success: ' + user.displayName);
-    setTimeout(() => {window.location.href = "http://localhost:8501"; }, 2000);
+    setTimeout(() => {window.location.href = "https://atscheck-pro.streamlit.app"; }, 2000);
   } catch (error) { showModalMessage(error.message); }
 });
 </script>
